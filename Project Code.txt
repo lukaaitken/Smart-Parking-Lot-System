@@ -1,0 +1,126 @@
+#include <HCSR04.h>
+
+#define NOTE_E4 330
+#define NOTE_E5 659
+
+#define NOTE_A5 880
+#define NOTE_B5 988
+
+const int TRIG_PIN = 13;
+const int ECHO_PIN = 12;
+
+const int TRIG2 = 10;
+const int ECHO2 = 9;
+
+int latchPin = 3;
+int clockPin = 4;
+int dataPin = 2;
+
+UltraSonicDistanceSensor distanceSensor(TRIG_PIN, ECHO_PIN);
+UltraSonicDistanceSensor distanceSensor2(TRIG2, ECHO2);
+
+double sensor1;
+double sensor2;
+
+int counter = 6;
+
+byte seven_seg_digits[10] = { B11111100, // = 0
+ B01100000, // = 1
+ B11011010, // = 2
+ B11110010, // = 3
+ B01100110, // = 4
+ B10110110, // = 5
+ };
+
+void sevenSegWrite(byte digit) {
+ digitalWrite(latchPin, LOW);
+ shiftOut(dataPin, clockPin, LSBFIRST, seven_seg_digits[digit]); 
+ digitalWrite(latchPin, HIGH);
+}
+
+
+void setup() {
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  pinMode(TRIG2, OUTPUT);
+  pinMode(ECHO2, INPUT);
+  myServo.attach(SERVO);
+  pinMode(latchPin, OUTPUT);
+  pinMode(clockPin, OUTPUT);
+  pinMode(dataPin, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+  sensor1 = distanceSensor.measureDistanceCm();
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  double duration1 = pulseIn(ECHO_PIN, HIGH);
+  sensor1 = duration1 * 0.034 / 2;
+  
+  delay(500);
+
+ //sensor 1 - entrance
+  if (sensor1 < 20 && sensor1 > 10)
+  {
+    if(counter > 0)
+    {
+        tone(8, NOTE_E4, 1000);
+        counter--;
+        sevenSegWrite(counter);
+        delay(1000);
+    }
+ 
+        
+ 
+    if (counter == 0)
+    {
+        tone(8, NOTE_E5, 1000);
+        
+        
+
+    }
+  }
+
+
+  sensor2 = distanceSensor2.measureDistanceCm();
+  digitalWrite(TRIG2, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG2, LOW);
+  double duration2 = pulseIn(ECHO2, HIGH);
+  sensor2 = duration2 * 0.034 / 2;
+  Serial.print(sensor1);
+  Serial.print("\n");
+  Serial.print(sensor2);
+  Serial.print("\n");
+  Serial.print(counter);
+  Serial.print("\n");
+  
+  delay(500);
+
+   //sensor 2 - exit
+  if (sensor2 < 10)
+  {
+
+    if (counter == 0)
+    {
+        tone(8, NOTE_A5, 1000);
+        delay(1000);
+        
+
+    }    
+        tone(8, NOTE_B5, 1000);
+        counter++;
+        sevenSegWrite(counter);
+        delay(1000);
+    
+ 
+  
+  }
+}
